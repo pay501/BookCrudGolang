@@ -15,15 +15,15 @@ type Book struct {
 	Price       float64 `json:"price"`
 }
 
-func CreateBook(db *gorm.DB, book *Book) {
+func CreateBook(db *gorm.DB, book *Book) error {
 
 	result := db.Create(book)
 
 	if result.Error != nil {
-		log.Fatalf("Error creating book: %v", result.Error)
+		return result.Error
 	}
 
-	fmt.Println("Create book successful")
+	return nil
 }
 
 func GetBooks(db *gorm.DB) []Book {
@@ -37,35 +37,39 @@ func GetBooks(db *gorm.DB) []Book {
 	return books
 }
 
-func GetBook(db *gorm.DB, id uint64) *Book {
+func GetBook(db *gorm.DB, id int) (*Book, error) {
 	var book Book
 
 	result := db.First(&book, id)
 
 	if result.Error != nil {
-		log.Fatalf("Error getting book: %v", result.Error)
+		return nil, result.Error
 	}
-	return &book
+	return &book, nil
 }
 
-func UpdateBook(db *gorm.DB, book *Book) {
-	result := db.Save(book)
+func UpdateBook(db *gorm.DB, book *Book, id int) error {
+	result := db.Where("id = ?", id).Save(book)
 
 	if result.Error != nil {
-		log.Fatalf("Error updating book: %v", result.Error)
+		return result.Error
 	}
 
 	fmt.Println("Updated book successfully")
+
+	return nil
 }
 
-func DeleteBook(db *gorm.DB, id uint64) {
+func DeleteBook(db *gorm.DB, id int) error {
 	var book Book
 
 	result := db.Delete(&book, id)
 
 	if result.Error != nil {
-		log.Fatalf("Error deleting book: %v", result.Error)
+		return result.Error
 	}
 
 	fmt.Println("Delete book successful")
+
+	return nil
 }

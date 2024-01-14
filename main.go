@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -53,10 +55,83 @@ func main() {
 		return c.JSON(GetBooks(db))
 	})
 
+	app.Get("/book/:id", corsMiddleware, func(c *fiber.Ctx) error {
+		id, err := strconv.Atoi(c.Params("id"))
+
+		if err != nil {
+			return c.JSON(fiber.Map{
+				"message": "Not Found",
+				"status":  fiber.StatusNotFound,
+			})
+		}
+		book, err := GetBook(db, id)
+
+		if err != nil {
+			c.JSON(fiber.Map{
+				"error": err,
+			})
+		}
+		return c.JSON(fiber.Map{
+			"result": book,
+		})
+	})
+
 	//todo Create Book
 	app.Post("/addBook", corsMiddleware, func(c *fiber.Ctx) error {
+		book := new(Book)
+		if err := c.BodyParser(book); err != nil {
+			return c.JSON(fiber.Map{
+				"message": "There is something wrong",
+				"status":  fiber.StatusBadRequest,
+			})
+		}
 
-		return nil
+		CreateBook(db, book)
+
+		return c.JSON(fiber.Map{
+			"book":   book,
+			"status": fiber.StatusCreated,
+		})
+	})
+
+	//todo Update Book
+	app.Put("/updateBook/:id", corsMiddleware, func(c *fiber.Ctx) error {
+		book := new(Book)
+		id, err := strconv.Atoi(c.Params("id"))
+		if err != nil {
+			return c.JSON(fiber.Map{
+				"message": err,
+				"status":  fiber.StatusNotFound,
+			})
+		}
+		if err = c.BodyParser(book); err != nil {
+			return c.JSON(fiber.Map{
+				"message": err,
+				"status":  fiber.StatusBadRequest,
+			})
+		}
+
+		UpdateBook(db, book, id)
+		return c.JSON(fiber.Map{
+			"message": book,
+			"status":  fiber.StatusOK,
+		})
+	})
+
+	//todo Delete
+	app.Delete("/deleteBook/:id", corsMiddleware, func(c *fiber.Ctx) error {
+		id, err := strconv.Atoi(c.Params("id"))
+
+		if err != nil {
+			return c.JSON(fiber.Map{
+				"message": err,
+			})
+		}
+
+		DeleteBook(db, id)
+		return c.JSON(fiber.Map{
+			"message": "delete successful",
+		})
 	})
 
 	app.Listen(":8080")
