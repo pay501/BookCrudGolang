@@ -29,12 +29,6 @@ var newLogger = logger.New(
 	},
 )
 
-var books = []Book{
-	{Name: "test1", Author: "test1@mail.com", Description: "test1", Price: 90},
-	{Name: "test2", Author: "test2@mail.com", Description: "test2", Price: 90},
-	{Name: "test3", Author: "test3@mail.com", Description: "test3", Price: 90},
-}
-
 func main() {
 	dsn := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
@@ -54,20 +48,26 @@ func main() {
 
 	app := fiber.New()
 
+	//todo Get Books
+	app.Get("/books", corsMiddleware, func(c *fiber.Ctx) error {
+		return c.JSON(GetBooks(db))
+	})
+
 	//todo Create Book
-	/* newBook := Book{Name: "Stary Night", Author: "Van Goh", Description: "Book1", Price: 99.99}
-	CreateBook(db, &newBook)
-	*/
-	//todo Get Book
-	book := GetBook(db, 1)
+	app.Post("/addBook", corsMiddleware, func(c *fiber.Ctx) error {
 
-	//todo Update Book
-	book.Name = "Learn Golang With PMike"
-	book.Author = "PMike"
-	UpdateBook(db, book)
-
-	//todo Delete Book
-	DeleteBook(db, 1)
+		return nil
+	})
 
 	app.Listen(":8080")
+}
+
+func corsMiddleware(c *fiber.Ctx) error {
+	// Enable CORS for all routes
+	c.Set("Access-Control-Allow-Origin", "*")
+	c.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+	c.Set("Access-Control-Allow-Headers", "Content-Type")
+
+	// Continue to next middleware or route handler
+	return c.Next()
 }
