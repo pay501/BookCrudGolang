@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -29,12 +31,6 @@ var newLogger = logger.New(
 	},
 )
 
-var books = []Book{
-	{Name: "test1", Author: "test1@mail.com", Description: "test1", Price: 90},
-	{Name: "test2", Author: "test2@mail.com", Description: "test2", Price: 90},
-	{Name: "test3", Author: "test3@mail.com", Description: "test3", Price: 90},
-}
-
 func main() {
 	dsn := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
@@ -54,20 +50,99 @@ func main() {
 
 	app := fiber.New()
 
+	//todo Get Books
+	app.Get("/books", corsMiddleware, func(c *fiber.Ctx) error {
+		return c.JSON(GetBooks(db))
+	})
+
+	app.Get("/book/:id", corsMiddleware, func(c *fiber.Ctx) error {
+		id, err := strconv.Atoi(c.Params("id"))
+
+		if err != nil {
+			return c.JSON(fiber.Map{
+				"message": "Not Found",
+				"status":  fiber.StatusNotFound,
+			})
+		}
+		book, err := GetBook(db, id)
+
+		if err != nil {
+			c.JSON(fiber.Map{
+				"error": err,
+			})
+		}
+		return c.JSON(fiber.Map{
+			"result": book,
+		})
+	})
+
 	//todo Create Book
-	/* newBook := Book{Name: "Stary Night", Author: "Van Goh", Description: "Book1", Price: 99.99}
-	CreateBook(db, &newBook)
-	*/
-	//todo Get Book
-	book := GetBook(db, 1)
+	app.Post("/addBook", corsMiddleware, func(c *fiber.Ctx) error {
+		book := new(Book)
+		if err := c.BodyParser(book); err != nil {
+			return c.JSON(fiber.Map{
+				"message": "There is something wrong",
+				"status":  fiber.StatusBadRequest,
+			})
+		}
+
+		CreateBook(db, book)
+
+		return c.JSON(fiber.Map{
+			"book":   book,
+			"status": fiber.StatusCreated,
+		})
+	})
 
 	//todo Update Book
-	book.Name = "Learn Golang With PMike"
-	book.Author = "PMike"
-	UpdateBook(db, book)
+	app.Put("/updateBook/:id", corsMiddleware, func(c *fiber.Ctx) error {
+		book := new(Book)
+		id, err := strconv.Atoi(c.Params("id"))
+		if err != nil {
+			return c.JSON(fiber.Map{
+				"message": err,
+				"status":  fiber.StatusNotFound,
+			})
+		}
+		if err = c.BodyParser(book); err != nil {
+			return c.JSON(fiber.Map{
+				"message": err,
+				"status":  fiber.StatusBadRequest,
+			})
+		}
 
-	//todo Delete Book
-	DeleteBook(db, 1)
+		UpdateBook(db, book, id)
+		return c.JSON(fiber.Map{
+			"message": book,
+			"status":  fiber.StatusOK,
+		})
+	})
+
+	//todo Delete
+	app.Delete("/deleteBook/:id", corsMiddleware, func(c *fiber.Ctx) error {
+		id, err := strconv.Atoi(c.Params("id"))
+
+		if err != nil {
+			return c.JSON(fiber.Map{
+				"message": err,
+			})
+		}
+
+		DeleteBook(db, id)
+		return c.JSON(fiber.Map{
+			"message": "delete successful",
+		})
+	})
 
 	app.Listen(":8080")
+}
+
+func corsMiddleware(c *fiber.Ctx) error {
+	// Enable CORS for all routes
+	c.Set("Access-Control-Allow-Origin", "*")
+	c.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+	c.Set("Access-Control-Allow-Headers", "Content-Type")
+
+	// Continue to next middleware or route handler
+	return c.Next()
 }
