@@ -33,12 +33,9 @@ var newLogger = logger.New(
 )
 
 func corsMiddleware(c *fiber.Ctx) error {
-	// Enable CORS for all routes
 	c.Set("Access-Control-Allow-Origin", "*")
 	c.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
 	c.Set("Access-Control-Allow-Headers", "Content-Type")
-
-	// Continue to next middleware or route handler
 	return c.Next()
 }
 

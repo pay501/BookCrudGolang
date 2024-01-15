@@ -1,0 +1,13 @@
+.container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container input{
+    border-radius: 8px;
+    outline: none;
+    color: black;
+    padding: 4px;
+    width: 250px;
+}
