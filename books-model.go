@@ -49,7 +49,8 @@ func GetBook(db *gorm.DB, id int) (*Book, error) {
 }
 
 func UpdateBook(db *gorm.DB, book *Book, id int) error {
-	result := db.Where("id = ?", id).Save(book)
+
+	result := db.Model(&book).Where("id = ?", id).Updates(book)
 
 	if result.Error != nil {
 		return result.Error

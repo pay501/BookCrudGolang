@@ -17,9 +17,7 @@ export default function HomePage() {
   useEffect(() => {
     getBooks();
   }, []);
-
-  console.log(items)
-
+  
   return (
     <div>
       <h1>Book List</h1>
