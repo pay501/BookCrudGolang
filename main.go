@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v4"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -31,6 +32,33 @@ var newLogger = logger.New(
 	},
 )
 
+func corsMiddleware(c *fiber.Ctx) error {
+	// Enable CORS for all routes
+	c.Set("Access-Control-Allow-Origin", "*")
+	c.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+	c.Set("Access-Control-Allow-Headers", "Content-Type")
+
+	// Continue to next middleware or route handler
+	return c.Next()
+}
+
+func authRequired(c *fiber.Ctx) error {
+	jwtSecretKey := "testSecret"
+	cookie := c.Cookies("jwt")
+
+	token, err := jwt.ParseWithClaims(cookie, jwt.MapClaims{}, func(t *jwt.Token) (interface{}, error) {
+		return []byte(jwtSecretKey), nil
+	})
+
+	if err != nil {
+		return c.SendStatus(fiber.StatusUnauthorized)
+	}
+
+	claim := token.Claims.(jwt.MapClaims)
+	fmt.Println(claim["user_id"])
+	return c.Next()
+}
+
 func main() {
 	dsn := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
@@ -46,9 +74,10 @@ func main() {
 	}
 
 	// db.Migrator().DropColumn(&Book{}, "test")
-	db.AutoMigrate(&Book{})
+	db.AutoMigrate(&Book{}, &User{})
 
 	app := fiber.New()
+	app.Use("/books", authRequired)
 
 	//todo Get Books
 	app.Get("/books", corsMiddleware, func(c *fiber.Ctx) error {
@@ -86,7 +115,12 @@ func main() {
 			})
 		}
 
-		CreateBook(db, book)
+		err = CreateBook(db, book)
+		if err != nil {
+			return c.JSON(fiber.Map{
+				"status": fiber.StatusBadRequest,
+			})
+		}
 
 		return c.JSON(fiber.Map{
 			"book":   book,
@@ -111,7 +145,13 @@ func main() {
 			})
 		}
 
-		UpdateBook(db, book, id)
+		err = UpdateBook(db, book, id)
+		if err != nil {
+			return c.JSON(fiber.Map{
+				"message": err,
+				"status":  fiber.StatusBadRequest,
+			})
+		}
 		return c.JSON(fiber.Map{
 			"message": book,
 			"status":  fiber.StatusOK,
@@ -134,15 +174,68 @@ func main() {
 		})
 	})
 
+	//todo User API
+	app.Post("/register", corsMiddleware, func(c *fiber.Ctx) error {
+		newUser := new(User)
+		if err := c.BodyParser(&newUser); err != nil {
+			return c.JSON(fiber.Map{
+				"status": fiber.StatusBadRequest,
+			})
+		}
+
+		if newUser.Email == "" || newUser.Password == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "Not null",
+				"status":  fiber.StatusBadRequest,
+			})
+		}
+
+		err = CreateUser(db, newUser)
+		if err != nil {
+			return c.JSON(fiber.Map{
+				"message": err,
+				"status":  fiber.StatusForbidden,
+			})
+		}
+		return c.JSON(fiber.Map{
+			"message": "Register successful",
+			"status":  fiber.StatusCreated,
+		})
+	})
+
+	app.Post("/login", corsMiddleware, func(c *fiber.Ctx) error {
+		data := new(User)
+
+		if err := c.BodyParser(data); err != nil {
+			return c.JSON(fiber.Map{
+				"message": err,
+				"status":  fiber.StatusBadRequest,
+			})
+		}
+
+		if data.Email == "" || data.Password == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"message": "data can't be null.",
+				"status":  fiber.StatusBadRequest,
+			})
+		}
+
+		result, err := LoginUser(db, data)
+		if err != nil {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
+
+		c.Cookie(&fiber.Cookie{
+			Name:     "jwt",
+			Value:    result,
+			Expires:  time.Now().Add(time.Hour * 72),
+			HTTPOnly: true,
+		})
+
+		return c.JSON(fiber.Map{
+			"message": "Login successful.",
+		})
+	})
+
 	app.Listen(":8080")
-}
-
-func corsMiddleware(c *fiber.Ctx) error {
-	// Enable CORS for all routes
-	c.Set("Access-Control-Allow-Origin", "*")
-	c.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
-	c.Set("Access-Control-Allow-Headers", "Content-Type")
-
-	// Continue to next middleware or route handler
-	return c.Next()
 }
