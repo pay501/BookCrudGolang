@@ -50,7 +50,7 @@ func LoginUser(db *gorm.DB, user *User) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["user_id"] = selectedUser.ID
-	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+	claims["exp"] = time.Now().Add(time.Minute * 2).Unix()
 
 	t, err := token.SignedString([]byte(jwtSecretKey))
 	if err != nil {

@@ -20,14 +20,7 @@ export default function HomePage() {
   
   return (
     <div>
-      <h1>Book List</h1>
-      <ul>
-        {items.map((book) => (
-          <li key={book.ID}>
-            <strong>{book.name}</strong> by {book.author} - ${book.price}
-          </li>
-        ))}
-      </ul>
+      <h1 className="text-4xl font-bold">Welcome Back!</h1>
     </div>
   );
 }

@@ -33,13 +33,10 @@ var newLogger = logger.New(
 )
 
 func corsMiddleware(c *fiber.Ctx) error {
-	// Enable CORS for all routes
 	c.Set("Access-Control-Allow-Origin", "*")
-	c.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+	c.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 	c.Set("Access-Control-Allow-Headers", "Content-Type")
-
-	// Continue to next middleware or route handler
-	return c.Next()
+	return c.SendStatus(fiber.StatusOK)
 }
 
 func authRequired(c *fiber.Ctx) error {
@@ -77,7 +74,8 @@ func main() {
 	db.AutoMigrate(&Book{}, &User{})
 
 	app := fiber.New()
-	app.Use("/books", authRequired)
+	app.Use("/books", "/addBook", authRequired)
+	app.Use(corsMiddleware)
 
 	//todo Get Books
 	app.Get("/books", corsMiddleware, func(c *fiber.Ctx) error {
@@ -228,7 +226,7 @@ func main() {
 		c.Cookie(&fiber.Cookie{
 			Name:     "jwt",
 			Value:    result,
-			Expires:  time.Now().Add(time.Hour * 72),
+			Expires:  time.Now().Add(time.Minute * 2),
 			HTTPOnly: true,
 		})
 
