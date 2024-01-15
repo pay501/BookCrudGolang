@@ -77,105 +77,10 @@ func main() {
 	db.AutoMigrate(&Book{}, &User{})
 
 	app := fiber.New()
-	app.Use("/books", authRequired)
-
-	//todo Get Books
-	app.Get("/books", corsMiddleware, func(c *fiber.Ctx) error {
-		return c.JSON(GetBooks(db))
-	})
-
-	app.Get("/book/:id", corsMiddleware, func(c *fiber.Ctx) error {
-		id, err := strconv.Atoi(c.Params("id"))
-
-		if err != nil {
-			return c.JSON(fiber.Map{
-				"message": "Not Found",
-				"status":  fiber.StatusNotFound,
-			})
-		}
-		book, err := GetBook(db, id)
-
-		if err != nil {
-			c.JSON(fiber.Map{
-				"error": err,
-			})
-		}
-		return c.JSON(fiber.Map{
-			"result": book,
-		})
-	})
-
-	//todo Create Book
-	app.Post("/addBook", corsMiddleware, func(c *fiber.Ctx) error {
-		book := new(Book)
-		if err := c.BodyParser(book); err != nil {
-			return c.JSON(fiber.Map{
-				"message": "There is something wrong",
-				"status":  fiber.StatusBadRequest,
-			})
-		}
-
-		err = CreateBook(db, book)
-		if err != nil {
-			return c.JSON(fiber.Map{
-				"status": fiber.StatusBadRequest,
-			})
-		}
-
-		return c.JSON(fiber.Map{
-			"book":   book,
-			"status": fiber.StatusCreated,
-		})
-	})
-
-	//todo Update Book
-	app.Put("/updateBook/:id", corsMiddleware, func(c *fiber.Ctx) error {
-		book := new(Book)
-		id, err := strconv.Atoi(c.Params("id"))
-		if err != nil {
-			return c.JSON(fiber.Map{
-				"message": err,
-				"status":  fiber.StatusNotFound,
-			})
-		}
-		if err = c.BodyParser(book); err != nil {
-			return c.JSON(fiber.Map{
-				"message": err,
-				"status":  fiber.StatusBadRequest,
-			})
-		}
-
-		err = UpdateBook(db, book, id)
-		if err != nil {
-			return c.JSON(fiber.Map{
-				"message": err,
-				"status":  fiber.StatusBadRequest,
-			})
-		}
-		return c.JSON(fiber.Map{
-			"message": book,
-			"status":  fiber.StatusOK,
-		})
-	})
-
-	//todo Delete
-	app.Delete("/deleteBook/:id", corsMiddleware, func(c *fiber.Ctx) error {
-		id, err := strconv.Atoi(c.Params("id"))
-
-		if err != nil {
-			return c.JSON(fiber.Map{
-				"message": err,
-			})
-		}
-
-		DeleteBook(db, id)
-		return c.JSON(fiber.Map{
-			"message": "delete successful",
-		})
-	})
+	app.Use(corsMiddleware)
 
 	//todo User API
-	app.Post("/register", corsMiddleware, func(c *fiber.Ctx) error {
+	app.Post("/register", func(c *fiber.Ctx) error {
 		newUser := new(User)
 		if err := c.BodyParser(&newUser); err != nil {
 			return c.JSON(fiber.Map{
@@ -203,7 +108,7 @@ func main() {
 		})
 	})
 
-	app.Post("/login", corsMiddleware, func(c *fiber.Ctx) error {
+	app.Post("/login", func(c *fiber.Ctx) error {
 		data := new(User)
 
 		if err := c.BodyParser(data); err != nil {
@@ -234,6 +139,103 @@ func main() {
 
 		return c.JSON(fiber.Map{
 			"message": "Login successful.",
+		})
+	})
+
+	app.Use(authRequired)
+
+	//todo Get Books
+	app.Get("/books", func(c *fiber.Ctx) error {
+		return c.JSON(GetBooks(db))
+	})
+
+	app.Get("/book/:id", func(c *fiber.Ctx) error {
+		id, err := strconv.Atoi(c.Params("id"))
+
+		if err != nil {
+			return c.JSON(fiber.Map{
+				"message": "Not Found",
+				"status":  fiber.StatusNotFound,
+			})
+		}
+		book, err := GetBook(db, id)
+
+		if err != nil {
+			c.JSON(fiber.Map{
+				"error": err,
+			})
+		}
+		return c.JSON(fiber.Map{
+			"result": book,
+		})
+	})
+
+	//todo Create Book
+	app.Post("/addBook", func(c *fiber.Ctx) error {
+		book := new(Book)
+		if err := c.BodyParser(book); err != nil {
+			return c.JSON(fiber.Map{
+				"message": "There is something wrong",
+				"status":  fiber.StatusBadRequest,
+			})
+		}
+
+		err = CreateBook(db, book)
+		if err != nil {
+			return c.JSON(fiber.Map{
+				"status": fiber.StatusBadRequest,
+			})
+		}
+
+		return c.JSON(fiber.Map{
+			"book":   book,
+			"status": fiber.StatusCreated,
+		})
+	})
+
+	//todo Update Book
+	app.Put("/updateBook/:id", func(c *fiber.Ctx) error {
+		book := new(Book)
+		id, err := strconv.Atoi(c.Params("id"))
+		if err != nil {
+			return c.JSON(fiber.Map{
+				"message": err,
+				"status":  fiber.StatusNotFound,
+			})
+		}
+		if err = c.BodyParser(book); err != nil {
+			return c.JSON(fiber.Map{
+				"message": err,
+				"status":  fiber.StatusBadRequest,
+			})
+		}
+
+		err = UpdateBook(db, book, id)
+		if err != nil {
+			return c.JSON(fiber.Map{
+				"message": err,
+				"status":  fiber.StatusBadRequest,
+			})
+		}
+		return c.JSON(fiber.Map{
+			"message": book,
+			"status":  fiber.StatusOK,
+		})
+	})
+
+	//todo Delete
+	app.Delete("/deleteBook/:id", func(c *fiber.Ctx) error {
+		id, err := strconv.Atoi(c.Params("id"))
+
+		if err != nil {
+			return c.JSON(fiber.Map{
+				"message": err,
+			})
+		}
+
+		DeleteBook(db, id)
+		return c.JSON(fiber.Map{
+			"message": "delete successful",
 		})
 	})
 
