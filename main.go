@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/golang-jwt/jwt/v4"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -31,13 +32,6 @@ var newLogger = logger.New(
 		Colorful:      true,        // Disable color
 	},
 )
-
-func corsMiddleware(c *fiber.Ctx) error {
-	c.Set("Access-Control-Allow-Origin", "*")
-	c.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
-	c.Set("Access-Control-Allow-Headers", "Content-Type")
-	return c.Next()
-}
 
 func authRequired(c *fiber.Ctx) error {
 	jwtSecretKey := "testSecret"
@@ -74,19 +68,24 @@ func main() {
 	db.AutoMigrate(&Book{}, &User{})
 
 	app := fiber.New()
-	app.Use(corsMiddleware)
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     "http://localhost:5173, http://localhost:3000",
+		AllowHeaders:     "Origin, Content-Type, Accept",
+		AllowCredentials: true,
+	}))
 
 	//todo User API
 	app.Post("/register", func(c *fiber.Ctx) error {
 		newUser := new(User)
 		if err := c.BodyParser(&newUser); err != nil {
 			return c.JSON(fiber.Map{
-				"status": fiber.StatusBadRequest,
+				"message": "wrong with body parser",
+				"status":  fiber.StatusBadRequest,
 			})
 		}
 
 		if newUser.Email == "" || newUser.Password == "" {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			return c.JSON(fiber.Map{
 				"message": "Not null",
 				"status":  fiber.StatusBadRequest,
 			})
@@ -127,15 +126,16 @@ func main() {
 			return c.SendStatus(fiber.StatusUnauthorized)
 		}
 
-		c.Cookie(&fiber.Cookie{
+		cookie := fiber.Cookie{
 			Name:     "jwt",
 			Value:    result,
 			Expires:  time.Now().Add(time.Hour * 72),
 			HTTPOnly: true,
-		})
+		}
 
+		c.Cookie((&cookie))
 		return c.JSON(fiber.Map{
-			"message": "Login successful.",
+			"message": "Login successful",
 		})
 	})
 
@@ -177,6 +177,14 @@ func main() {
 			})
 		}
 
+		if book.Name == "" || book.Author == "" || book.Description == "" || book.Price == 0 {
+			return c.JSON(fiber.Map{
+				"message": "Data is null.",
+				"status":  fiber.StatusBadRequest,
+			})
+		}
+
+		fmt.Println(book)
 		err = CreateBook(db, book)
 		if err != nil {
 			return c.JSON(fiber.Map{
@@ -185,8 +193,8 @@ func main() {
 		}
 
 		return c.JSON(fiber.Map{
-			"book":   book,
-			"status": fiber.StatusCreated,
+			"message": "Add successful",
+			"status":  fiber.StatusCreated,
 		})
 	})
 

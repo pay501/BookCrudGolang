@@ -30,8 +30,15 @@ export default function LoginPage (){
                 axios.post("http://localhost:8080/login",{
                     email:form.email,
                     password:form.password,
-                }).then(res=>{
-                    console.log(res.data)
+                },
+                { withCredentials: true }
+                ).then(res=>{
+                    if(res.data.message === "Login successful"){
+                        Swal.fire({
+                            icon:"success",
+                            title:"Login successful"
+                        })
+                    }
                 })
             }
         }catch(err){
