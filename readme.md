@@ -1,10 +1,10 @@
 # BookCrudGolang
 
 # How to run
-first - docker compose up -d
-second - go run .
-new terminal
-third - cd client , npm i ,npm run dev
+        first - docker compose up -d
+        second - go run .
+        new terminal
+        third - cd client , npm i ,npm run dev
 
 # merge branch
 git merge --allow-unrelated-histories branch_to_merge
