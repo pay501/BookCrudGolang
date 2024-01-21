@@ -33,7 +33,7 @@ func CreateUser(db *gorm.DB, user *User) error {
 func LoginUser(db *gorm.DB, user *User) (string, error) {
 	selectedUser := new(User)
 
-	result := db.Where("email = ?", user.Email).First(selectedUser)
+	result := db.Where("email = ?", user.Email).First(&selectedUser)
 	if result.Error != nil {
 		fmt.Println("Error on database")
 		return "", result.Error
@@ -50,7 +50,7 @@ func LoginUser(db *gorm.DB, user *User) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["user_id"] = selectedUser.ID
-	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+	claims["exp"] = time.Now().Add(time.Minute * 10).Unix()
 
 	t, err := token.SignedString([]byte(jwtSecretKey))
 	if err != nil {

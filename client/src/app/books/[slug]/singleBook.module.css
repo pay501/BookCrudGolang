@@ -1,0 +1,24 @@
+.container{
+    height: 80vh;
+    margin-left: 9%;
+    margin-top: 2%;
+    display: flex;
+    gap: 100px;
+    width: 80%;
+    border-radius: 8px;
+}
+
+.imgContainer{
+    flex: 1;
+    position: relative;
+}
+
+.img{
+    object-fit:fill;
+    border-radius: 16px;
+}
+
+.aboutContainer{
+    flex: 1;
+    margin-top: 2%;
+}

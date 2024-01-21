@@ -1,0 +1,26 @@
+.card{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding-left: 40px;
+    padding-right: 40px;
+}
+
+.insideCard{
+    display: flex;
+    margin-top: 4%;
+}
+
+.textContainer{
+    flex: 1;
+}
+
+.imgContainer{
+    flex: 1;
+    position: relative;
+}
+
+.img{
+    object-fit: cover;
+    border-radius: 16px;
+}

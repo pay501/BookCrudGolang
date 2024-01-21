@@ -1,7 +1,8 @@
+"use client"
 export default function LoginPage() {
     return (
         <div>
-            Loading ...
+            <span className="loading loading-spinner loading-lg"></span>
         </div>
     )
 }
