@@ -13,6 +13,7 @@ type Book struct {
 	Author      string  `json:"author"`
 	Description string  `json:"description"`
 	Price       float64 `json:"price"`
+	Image       string  `json:"image"`
 }
 
 func CreateBook(db *gorm.DB, book *Book) error {

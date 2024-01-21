@@ -1,5 +1,34 @@
-.container input{
-    color: black;
+.container{
+    height: 80vh;
+    display: flex;
+    gap: 100px;
+    margin-left: 5%;
+    margin-right: 5%;
+}
+
+.imgContainer{
+    flex: 1;
+    position: relative;
+    top: 5%;
+}
+
+.img{
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+
+.formContainer{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    top: 5%;
+}
+
+.formContainer input{
+    color: white;
     border-radius: 8px;
+    width: 100%;
     outline: none;
 }

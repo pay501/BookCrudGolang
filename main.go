@@ -33,20 +33,25 @@ var newLogger = logger.New(
 	},
 )
 
-func authRequired(c *fiber.Ctx) error {
+func authRequestMiddleware(c *fiber.Ctx) error {
 	jwtSecretKey := "testSecret"
 	cookie := c.Cookies("jwt")
 
-	token, err := jwt.ParseWithClaims(cookie, jwt.MapClaims{}, func(t *jwt.Token) (interface{}, error) {
+	if cookie == "" {
+		c.Redirect("/redirect")
+		return nil
+	}
+
+	_, err := jwt.ParseWithClaims(cookie, jwt.MapClaims{}, func(t *jwt.Token) (interface{}, error) {
 		return []byte(jwtSecretKey), nil
 	})
 
 	if err != nil {
-		return c.SendStatus(fiber.StatusUnauthorized)
+		c.Redirect("/redirect")
 	}
 
-	claim := token.Claims.(jwt.MapClaims)
-	fmt.Println(claim["user_id"])
+
+	
 	return c.Next()
 }
 
@@ -74,7 +79,15 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	//todo User API
+	app.Get("/redirect", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"message": "return",
+		})
+	})
+
+	//! User API
+
+	//? User register
 	app.Post("/register", func(c *fiber.Ctx) error {
 		newUser := new(User)
 		if err := c.BodyParser(&newUser); err != nil {
@@ -104,10 +117,11 @@ func main() {
 		})
 	})
 
+	//? User Login
 	app.Post("/login", func(c *fiber.Ctx) error {
 		data := new(User)
 
-		if err := c.BodyParser(data); err != nil {
+		if err := c.BodyParser(&data); err != nil {
 			return c.JSON(fiber.Map{
 				"message": err,
 				"status":  fiber.StatusBadRequest,
@@ -123,7 +137,10 @@ func main() {
 
 		result, err := LoginUser(db, data)
 		if err != nil {
-			return c.SendStatus(fiber.StatusUnauthorized)
+			return c.JSON(fiber.Map{
+				"message": "Login failed",
+				"status":  fiber.StatusUnauthorized,
+			})
 		}
 
 		cookie := fiber.Cookie{
@@ -139,16 +156,41 @@ func main() {
 		})
 	})
 
-	app.Use(authRequired)
+	app.Get("/logout", func(c *fiber.Ctx) error {
+		cookie := fiber.Cookie{
+			Name:     "jwt",
+			Value:    "",
+			Expires:  time.Now().Add(-time.Microsecond),
+			HTTPOnly: true,
+		}
+
+		c.Cookie(&cookie)
+
+		return c.JSON(fiber.Map{
+			"message": "Logout successful",
+		})
+	})
 
 	//todo Get Books
 	app.Get("/books", func(c *fiber.Ctx) error {
-		return c.JSON(GetBooks(db))
+		return c.JSON(fiber.Map{
+			"message": "Get book successful",
+			"result":  GetBooks(db),
+		})
+	})
+
+
+	//todo Use middleware here
+	app.Use(authRequestMiddleware)
+
+	app.Get("/checkSession", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"message": "Session true",
+		})
 	})
 
 	app.Get("/book/:id", func(c *fiber.Ctx) error {
 		id, err := strconv.Atoi(c.Params("id"))
-
 		if err != nil {
 			return c.JSON(fiber.Map{
 				"message": "Not Found",
@@ -163,11 +205,11 @@ func main() {
 			})
 		}
 		return c.JSON(fiber.Map{
-			"result": book,
+			"message": "Get book successful",
+			"result":  book,
 		})
 	})
 
-	//todo Create Book
 	app.Post("/addBook", func(c *fiber.Ctx) error {
 		book := new(Book)
 		if err := c.BodyParser(book); err != nil {
@@ -184,7 +226,7 @@ func main() {
 			})
 		}
 
-		fmt.Println(book)
+		fmt.Println(book.Image)
 		err = CreateBook(db, book)
 		if err != nil {
 			return c.JSON(fiber.Map{
@@ -198,7 +240,6 @@ func main() {
 		})
 	})
 
-	//todo Update Book
 	app.Put("/updateBook/:id", func(c *fiber.Ctx) error {
 		book := new(Book)
 		id, err := strconv.Atoi(c.Params("id"))
@@ -223,7 +264,7 @@ func main() {
 			})
 		}
 		return c.JSON(fiber.Map{
-			"message": book,
+			"message": "Update successful",
 			"status":  fiber.StatusOK,
 		})
 	})

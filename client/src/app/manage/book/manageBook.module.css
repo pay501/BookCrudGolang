@@ -1,0 +1,14 @@
+.container{
+    height: 80vh;
+}
+
+.container .delete svg {
+    width: 25px;
+    height: 25px;
+    fill: rgb(243, 109, 109);
+}
+.container .update svg {
+    width: 25px;
+    height: 25px;
+    fill: rgb(100, 244, 90);
+}

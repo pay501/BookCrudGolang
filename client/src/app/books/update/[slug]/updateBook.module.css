@@ -1,0 +1,29 @@
+.container{
+    height: 80vh;
+    display: flex;
+    gap: 100px;
+    margin-top: 2%;
+}
+
+
+.imgContainer {
+    flex:1;
+    position: relative;
+    margin-left: 3%;
+}
+
+.formContainer{
+    flex: 1;
+}
+.formContainer input,.formContainer textarea{
+    color: white;
+    font-weight: 600;
+}
+.formContainer input::placeholder{
+    font-size: 12px;
+}
+
+.img{
+    object-fit: contain;
+    border-radius: 16px;
+}
