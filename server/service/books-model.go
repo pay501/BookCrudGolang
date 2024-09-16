@@ -1,4 +1,4 @@
-package main
+package model
 
 import (
 	"fmt"
@@ -16,9 +16,9 @@ type Book struct {
 	Image       string  `json:"image"`
 }
 
-func CreateBook(db *gorm.DB, book *Book) error {
+func CreateBook(book *Book) error {
 
-	result := db.Create(book)
+	result := Db.Create(book)
 
 	if result.Error != nil {
 		return result.Error
@@ -27,9 +27,9 @@ func CreateBook(db *gorm.DB, book *Book) error {
 	return nil
 }
 
-func GetBooks(db *gorm.DB) []Book {
+func GetBooks() []Book {
 	var books []Book
-	result := db.Find(&books)
+	result := Db.Find(&books)
 
 	if result.Error != nil {
 		log.Fatalf("Error getting books: %v", result.Error)
@@ -38,10 +38,10 @@ func GetBooks(db *gorm.DB) []Book {
 	return books
 }
 
-func GetBook(db *gorm.DB, id int) (*Book, error) {
+func GetBook(id int) (*Book, error) {
 	var book Book
 
-	result := db.First(&book, id)
+	result := Db.First(&book, id)
 
 	if result.Error != nil {
 		return nil, result.Error
@@ -49,9 +49,9 @@ func GetBook(db *gorm.DB, id int) (*Book, error) {
 	return &book, nil
 }
 
-func UpdateBook(db *gorm.DB, book *Book, id int) error {
+func UpdateBook(book *Book, id int) error {
 
-	result := db.Model(&book).Where("id = ?", id).Updates(book)
+	result := Db.Model(&book).Where("id = ?", id).Updates(book)
 
 	if result.Error != nil {
 		return result.Error
@@ -62,10 +62,10 @@ func UpdateBook(db *gorm.DB, book *Book, id int) error {
 	return nil
 }
 
-func DeleteBook(db *gorm.DB, id int) error {
+func DeleteBook(id int) error {
 	var book Book
 
-	result := db.Delete(&book, id)
+	result := Db.Delete(&book, id)
 
 	if result.Error != nil {
 		return result.Error
