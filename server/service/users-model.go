@@ -1,4 +1,4 @@
-package main
+package model
 
 import (
 	"fmt"
@@ -9,20 +9,22 @@ import (
 	"gorm.io/gorm"
 )
 
+var Db gorm.DB
+
 type User struct {
 	gorm.Model
 	Email    string `json:"email" gorm:"unique;not null"`
 	Password string `json:"password" gorm:"not null"`
 }
 
-func CreateUser(db *gorm.DB, user *User) error {
+func CreateUser(user *User) error {
 	hashPwd, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
 	user.Password = string(hashPwd)
 
-	result := db.Create(user)
+	result := Db.Create(user)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -30,10 +32,10 @@ func CreateUser(db *gorm.DB, user *User) error {
 	return nil
 }
 
-func LoginUser(db *gorm.DB, user *User) (string, error) {
+func LoginUser(user *User) (string, error) {
 	selectedUser := new(User)
 
-	result := db.Where("email = ?", user.Email).First(&selectedUser)
+	result := Db.Where("email = ?", user.Email).First(&selectedUser)
 	if result.Error != nil {
 		fmt.Println("Error on database")
 		return "", result.Error
