@@ -46,7 +46,9 @@ export default function HomeContent() {
                         </div>
                     </div>
                 </section>
-                <section className={`${style.card} `}>
+                {
+                    items.length > 0 ? 
+                    <section className={`${style.card} `}>
                     {
                         items.map((val, key) => {
                             return (
@@ -76,6 +78,9 @@ export default function HomeContent() {
                         })
                     }
                 </section>
+                :
+                <section></section>
+                }
             </div>
             }
         </div>

@@ -16,7 +16,7 @@ export default function ManageBookPage() {
         try {
             await axios.get("http://localhost:8080/books", { withCredentials: true })
                 .then(res => {
-                    if (res.data.message === "Get book successful") {
+                    if(res.data.code == 200){
                         setBooks(res.data.result)
                     }
                 })
@@ -92,7 +92,9 @@ export default function ManageBookPage() {
     }
     useEffect(() => {
         checkSession()
+        getBooks()
     }, [])
+    console.log(books)
 
 
     return (

@@ -48,8 +48,8 @@ export default function NavbarLinkPage() {
             }
         })
     }
-    checkLogin()
     useEffect(()=>{
+        checkLogin()
         checkLogin()
     },[])
 
