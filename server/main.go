@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"spy/handler"
+	"spy/repository"
 	service "spy/service"
 	"time"
 
@@ -41,9 +42,7 @@ func main() {
 	}
 
 	// db.Migrator().DropColumn(&Book{}, "test")
-	Db.AutoMigrate(&service.Book{}, &service.User{})
-
-	service.Db = *Db
+	Db.AutoMigrate(&repository.Book{}, &repository.User{})
 
 	app := fiber.New()
 	app.Use(cors.New(cors.Config{
@@ -58,11 +57,20 @@ func main() {
 		})
 	})
 
+	//todo Injecting
+	userRepo := repository.NewUserRepository(Db)
+	userService := service.NewUserService(userRepo)
+	userHandler := handler.NewUserHandler(userService)
+
+	bookRepo := repository.NewBookRepositoryDB(Db)
+	bookService := service.NewBookService(bookRepo)
+	bookHandler := handler.NewBookHandler(bookService)
+
 	//! User API
-	app.Post("/register", handler.SignUp)
-	app.Post("/login", handler.Login)
+	app.Post("/register", userHandler.SignUp)
+	app.Post("/login", userHandler.Login)
 	app.Get("/logout", handler.Logout)
-	app.Get("/books", handler.GetBooks)
+	app.Get("/books", bookHandler.GetBooks)
 
 	//todo Use middleware here
 	app.Use(AuthRequestMiddleware)
@@ -73,10 +81,10 @@ func main() {
 	})
 
 	// controller here
-	app.Get("/book/:id", handler.GetBookById)
-	app.Post("/addBook", handler.CreateBook)
-	app.Put("/updateBook/:id", handler.UpdateBook)
-	app.Delete("/deleteBook/:id", handler.DeleteBook)
+	app.Get("/book/:id", bookHandler.GetBookById)
+	app.Post("/addBook", bookHandler.CreateBook)
+	app.Put("/updateBook/:id", bookHandler.UpdateBook)
+	app.Delete("/deleteBook/:id", bookHandler.DeleteBook)
 
 	app.Listen(":8080")
 }

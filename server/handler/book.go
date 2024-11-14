@@ -1,23 +1,37 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
+	"spy/repository"
 	service "spy/service"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func GetBooks(c *fiber.Ctx) error {
-	books := service.GetBooks()
+type bookHandler struct {
+	bookServive service.BookService
+}
+
+func NewBookHandler(bookService service.BookService) bookHandler {
+	return bookHandler{bookServive: bookService}
+}
+
+func (h *bookHandler) GetBooks(c *fiber.Ctx) error {
+	books, err := h.bookServive.GetAllBook()
+	if err != nil {
+		return c.JSON(fiber.Map{
+			"code":    http.StatusInternalServerError,
+			"message": "cannot get books",
+		})
+	}
 	return c.JSON(fiber.Map{
 		"code":   http.StatusOK,
 		"result": books,
 	})
 }
 
-func GetBookById(c *fiber.Ctx) error {
+func (h *bookHandler) GetBookById(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.JSON(fiber.Map{
@@ -26,7 +40,7 @@ func GetBookById(c *fiber.Ctx) error {
 		})
 	}
 
-	book, err := service.GetBook(id)
+	book, err := h.bookServive.GetSingleBook(id)
 	if err != nil {
 		c.JSON(fiber.Map{
 			"error": err,
@@ -38,24 +52,17 @@ func GetBookById(c *fiber.Ctx) error {
 	})
 }
 
-func CreateBook(c *fiber.Ctx) error {
-	book := new(service.Book)
-	if err := c.BodyParser(book); err != nil {
+func (h *bookHandler) CreateBook(c *fiber.Ctx) error {
+	// or book := new(repository.Book)
+	book := repository.Book{}
+	if err := c.BodyParser(&book); err != nil {
 		return c.JSON(fiber.Map{
 			"message": "There is something wrong",
 			"status":  fiber.StatusBadRequest,
 		})
 	}
 
-	if book.Name == "" || book.Author == "" || book.Description == "" || book.Price == 0 {
-		return c.JSON(fiber.Map{
-			"message": "Data is null.",
-			"status":  fiber.StatusBadRequest,
-		})
-	}
-
-	fmt.Println(book.Image)
-	err := service.CreateBook(book)
+	err := h.bookServive.AddBook(&book)
 	if err != nil {
 		return c.JSON(fiber.Map{
 			"status": fiber.StatusBadRequest,
@@ -68,8 +75,8 @@ func CreateBook(c *fiber.Ctx) error {
 	})
 }
 
-func UpdateBook(c *fiber.Ctx) error {
-	book := new(service.Book)
+func (h *bookHandler) UpdateBook(c *fiber.Ctx) error {
+	book := new(repository.Book)
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.JSON(fiber.Map{
@@ -84,7 +91,7 @@ func UpdateBook(c *fiber.Ctx) error {
 		})
 	}
 
-	err = service.UpdateBook(book, id)
+	err = h.bookServive.UpdateBookService(book, id)
 	if err != nil {
 		return c.JSON(fiber.Map{
 			"message": err,
@@ -97,7 +104,7 @@ func UpdateBook(c *fiber.Ctx) error {
 	})
 }
 
-func DeleteBook(c *fiber.Ctx) error {
+func (h *bookHandler) DeleteBook(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 
 	if err != nil {
@@ -106,7 +113,12 @@ func DeleteBook(c *fiber.Ctx) error {
 		})
 	}
 
-	service.DeleteBook(id)
+	err = h.bookServive.DeleteBookService(id)
+	if err != nil {
+		return c.JSON(fiber.Map{
+			"error": err,
+		})
+	}
 	return c.JSON(fiber.Map{
 		"message": "delete successful",
 	})

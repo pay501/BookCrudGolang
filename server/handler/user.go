@@ -1,29 +1,31 @@
 package handler
 
 import (
+	"spy/errs"
+	"spy/repository"
 	service "spy/service"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func SignUp(c *fiber.Ctx) error {
-	newUser := service.User{}
+type userHandler struct {
+	userService service.UserService
+}
+
+func NewUserHandler(userService service.UserService) userHandler {
+	return userHandler{userService: userService}
+}
+
+func (h *userHandler) SignUp(c *fiber.Ctx) error {
+	newUser := repository.User{}
 	if err := c.BodyParser(&newUser); err != nil {
 		return c.JSON(fiber.Map{
-			"message": "wrong with body parser",
-			"status":  fiber.StatusBadRequest,
+			"result": errs.NewBadRequestError("bad request"),
 		})
 	}
 
-	if newUser.Email == "" || newUser.Password == "" {
-		return c.JSON(fiber.Map{
-			"message": "Not null",
-			"status":  fiber.StatusBadRequest,
-		})
-	}
-
-	err := service.CreateUser(&newUser)
+	err := h.userService.SignUp(&newUser)
 	if err != nil {
 		return c.JSON(fiber.Map{
 			"message": err,
@@ -35,8 +37,8 @@ func SignUp(c *fiber.Ctx) error {
 		"status":  fiber.StatusCreated,
 	})
 }
-func Login(c *fiber.Ctx) error {
-	data := new(service.User)
+func (h *userHandler) Login(c *fiber.Ctx) error {
+	data := service.LoginReq{}
 
 	if err := c.BodyParser(&data); err != nil {
 		return c.JSON(fiber.Map{
@@ -45,14 +47,7 @@ func Login(c *fiber.Ctx) error {
 		})
 	}
 
-	if data.Email == "" || data.Password == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "data can't be null.",
-			"status":  fiber.StatusBadRequest,
-		})
-	}
-
-	result, err := service.LoginUser(data)
+	result, err := h.userService.Login(&data)
 	if err != nil {
 		return c.JSON(fiber.Map{
 			"message": "Login failed",
@@ -70,6 +65,7 @@ func Login(c *fiber.Ctx) error {
 	c.Cookie((&cookie))
 	return c.JSON(fiber.Map{
 		"message": "Login successful",
+		"token":   result,
 	})
 }
 
